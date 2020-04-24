@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _children = [
     PlaceholderWidget(Colors.grey),
     MessageWidget(),
-    ProfileWidget()
+    ProfileWidget(auth: new Auth())
   ];
 
   _signOut() async {
@@ -32,6 +32,8 @@ class _HomePageState extends State<HomePage> {
       print(e);
     }
   }
+
+  
 
   @override
   Widget build(BuildContext context) {

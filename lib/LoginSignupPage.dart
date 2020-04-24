@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'authentication.dart';
- 
+
 class LoginSignupPage extends StatefulWidget {
   LoginSignupPage({this.auth, this.onSignedIn});
- 
+
   final BaseAuth auth;
   final VoidCallback onSignedIn;
- 
+
   @override
   State<StatefulWidget> createState() => new _LoginSignupPageState();
 }
- 
+
 enum FormMode { LOGIN, SIGNUP }
- 
+
 class _LoginSignupPageState extends State<LoginSignupPage> {
   final _formKey = new GlobalKey<FormState>();
- 
+
   String _email;
   String _password;
+  String _name;
   String _errorMessage = "";
- 
+
   // this will be used to identify the form to show
   FormMode _formMode = FormMode.LOGIN;
   bool _isIos = false;
   bool _isLoading = false;
- 
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -43,7 +45,7 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
       ),
     );
   }
- 
+
   Widget progressWidget() {
     if (_isLoading) {
       return Center(child: CircularProgressIndicator());
@@ -53,22 +55,57 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
       width: 0.0,
     );
   }
- 
+
   Widget formWidget() {
-    return Form(
-      key: _formKey,
-      child: Column(
+    Widget child;
+
+    if (_formMode == FormMode.LOGIN) {
+      child =
+      Column(
         children: <Widget>[
-          _emailWidget(),
+          _emailWidget(100.0),
           _passwordWidget(),
         ],
+      );
+    } else {
+      child =
+      Column(
+        children: <Widget>[
+          _nameWidget(),
+          _emailWidget(15.0),
+          _passwordWidget(),
+        ],
+      );
+    }
+
+    return Form(key: _formKey, child: child);
+  }
+
+  Widget _nameWidget() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10.0, 100.0, 10.0, 0.0),
+      child: TextFormField(
+        maxLines: 1,
+        keyboardType: TextInputType.text,
+        autofocus: false,
+        decoration: new InputDecoration(
+            hintText: 'Enter Full Name',
+            icon: new Icon(
+              Icons.text_fields,
+              color: Colors.grey,
+            )),
+        validator: (value) => value.isEmpty ? 'Name cannot be empty' : null,
+        onSaved: (value) => _name = value.trim(),
       ),
     );
   }
- 
-  Widget _emailWidget() {
+
+  Widget _emailWidget(double heightPad) {
+
+
+  
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 100.0, 0.0, 0.0),
+      padding: EdgeInsets.fromLTRB(10.0, heightPad, 10.0, 0.0),
       child: TextFormField(
         maxLines: 1,
         keyboardType: TextInputType.emailAddress,
@@ -84,10 +121,10 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
       ),
     );
   }
- 
+
   Widget _passwordWidget() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(10.0, 15.0, 10.0, 0.0),
       child: new TextFormField(
         maxLines: 1,
         obscureText: true,
@@ -103,7 +140,7 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
       ),
     );
   }
- 
+
   Widget loginButtonWidget() {
     return new Padding(
         padding: EdgeInsets.fromLTRB(0.0, 45.0, 0.0, 0.0),
@@ -120,7 +157,7 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
           onPressed: _validateAndSubmit,
         ));
   }
- 
+
   Widget secondaryButton() {
     return new FlatButton(
       child: _formMode == FormMode.LOGIN
@@ -132,7 +169,7 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
       onPressed: _formMode == FormMode.LOGIN ? showSignupForm : showLoginForm,
     );
   }
- 
+
   void showSignupForm() {
     _formKey.currentState.reset();
     _errorMessage = "";
@@ -140,7 +177,7 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
       _formMode = FormMode.SIGNUP;
     });
   }
- 
+
   void showLoginForm() {
     _formKey.currentState.reset();
     _errorMessage = "";
@@ -148,7 +185,7 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
       _formMode = FormMode.LOGIN;
     });
   }
- 
+
   Widget errorWidget() {
     if (_errorMessage.length > 0 && _errorMessage != null) {
       return new Text(
@@ -165,7 +202,7 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
       );
     }
   }
- 
+
   bool _validateAndSave() {
     final form = _formKey.currentState;
     if (form.validate()) {
@@ -174,7 +211,7 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
     }
     return false;
   }
- 
+
   _validateAndSubmit() async {
     setState(() {
       _errorMessage = "";
@@ -187,11 +224,36 @@ class _LoginSignupPageState extends State<LoginSignupPage> {
           userId = await widget.auth.signIn(_email, _password);
         } else {
           userId = await widget.auth.signUp(_email, _password);
+
+          final database = Firestore.instance;
+
+          try {
+            String authid = userId;
+            String email = _email;
+            String name = _name;
+            Map<String, String> userData = {
+              'AuthUserId': '$authid',
+              'Email': '$email',
+              'FullName': '$name',
+              'MobileNum': '',
+              'Address': '',
+              'City/Village': '',
+              'District': '',
+              'State': '',
+              'PinCode': '',
+            };
+            
+            database.collection('UserData').document(userId).setData(userData).catchError((e) {
+              print(e);
+            });
+          } catch (e) {
+            print(e);
+          }
         }
         setState(() {
           _isLoading = false;
         });
- 
+
         if (userId.length > 0 && userId != null) {
           widget.onSignedIn();
         }
