@@ -16,13 +16,17 @@ class HomePage extends StatefulWidget {
   State<StatefulWidget> createState() => new _HomePageState();
 }
 
+enum AuthStatus {
+  NOT_DETERMINED,
+  LOGGED_OUT,
+  LOGGED_IN,
+}
+
 class _HomePageState extends State<HomePage> {
+  AuthStatus authStatus = AuthStatus.NOT_DETERMINED;
+  String _userId = "";
+
   int _currentIndex = 0;
-  final List<Widget> _children = [
-    PlaceholderWidget(Colors.grey),
-    MessageWidget(),
-    ProfileWidget(auth: new Auth())
-  ];
 
   _signOut() async {
     try {
@@ -33,11 +37,27 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  
-
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    widget.auth.getCurrentUser().then((user) {
+      setState(() {
+        if (user != null) {
+          _userId = user?.uid;
+        }
+        authStatus =
+            user?.uid == null ? AuthStatus.LOGGED_OUT : AuthStatus.LOGGED_IN;
+      });
+    });
+  }
 
+  final List<Widget> _children = [
+    PlaceholderWidget(Colors.grey),
+    MessageWidget(),
+    ProfileWidget(userId: 'LC4HKPs6fLQ7Bw9TkjygSyY4Hbv2')
+  ];
+
+  Widget build(BuildContext context) {
     return new Scaffold(
       appBar: new AppBar(
         title: new Text('My Forum App'),

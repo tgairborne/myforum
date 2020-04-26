@@ -3,10 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'authentication.dart';
 
 class ProfileWidget extends StatefulWidget {
-
-  ProfileWidget({this.auth});
+  ProfileWidget({this.userId, this.auth});
 
   final BaseAuth auth;
+  final String userId;
 
   @override
   _ProfileWidgetState createState() => new _ProfileWidgetState();
@@ -19,11 +19,11 @@ enum AuthStatus {
 }
 
 class _ProfileWidgetState extends State<ProfileWidget> {
-  
-  AuthStatus authStatus = AuthStatus.NOT_DETERMINED;
   final _formKey = new GlobalKey<FormState>();
-  String _authID = '';
+
+  String _authID = 'LC4HKPs6fLQ7Bw9TkjygSyY4Hbv2';
   String _name;
+  String _phoneNo;
   String _email;
   String _password;
   String _errorMessage = "";
@@ -34,20 +34,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   var userDocument;
 
   @override
-
-  void initState() {
-    super.initState();
-    widget.auth.getCurrentUser().then((user) {
-      setState(() {
-        if (user != null) {
-          _authID = user?.uid;
-        }
-        authStatus =
-            user?.uid == null ? AuthStatus.LOGGED_OUT : AuthStatus.LOGGED_IN;
-      });
-    });
-  }
-
   Widget build(BuildContext context) {
     return new Scaffold(
       body: Column(
@@ -76,6 +62,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         children: <Widget>[
           _nameWidget(userDocument["FullName"]),
           _emailWidget(userDocument["Email"]),
+          _phoneWidget(userDocument['MobileNum']),
           updateButtonWidget()
         ],
       ),
@@ -90,14 +77,38 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         keyboardType: TextInputType.text,
         autofocus: false,
         decoration: new InputDecoration(
-            hintText: 'Enter Full Name',
-            icon: new Icon(
-              Icons.text_fields,
-              color: Colors.grey,
-            )),
-        validator: (value) => value.isEmpty ? 'Email cannot be empty' : null,
+          hintText: 'Enter Full Name',
+          labelText: 'Full Name',
+        ),
+        validator: (value) =>
+            value.isEmpty ? 'Full name cannot be empty' : null,
         initialValue: fullName,
         onSaved: (value) => _name = value.trim(),
+      ),
+    );
+  }
+
+  Widget _phoneWidget(var phoneNo) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10.0, 15.0, 10.0, 0.0),
+      child: TextFormField(
+        maxLines: 1,
+        keyboardType: TextInputType.text,
+        autofocus: false,
+        decoration: new InputDecoration(
+          hintText: 'Enter Phone Number',
+          labelText: 'Phone Number',
+        ),
+        validator: (value) {
+          if (!isNumeric(value)) {
+            return 'Please enter a valid Phone number';
+          }
+          else{
+            return null;
+          }
+        },
+        initialValue: phoneNo,
+        onSaved: (value) => _phoneNo = value.trim(),
       ),
     );
   }
@@ -111,11 +122,9 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         keyboardType: TextInputType.emailAddress,
         autofocus: false,
         decoration: new InputDecoration(
-            hintText: 'Enter Email',
-            icon: new Icon(
-              Icons.mail,
-              color: Colors.grey,
-            )),
+          hintText: 'Enter Email',
+          labelText: 'Email',
+        ),
         validator: (value) => value.isEmpty ? 'Email cannot be empty' : null,
         initialValue: eMail,
         onSaved: (value) => _email = value.trim(),
@@ -154,10 +163,31 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     });
 
     if (_validateAndSave()) {
-
       print(_name);
       print(_authID);
 
+      final database = Firestore.instance;
+
+      try {
+        database.collection('UserData').document(_authID).updateData(
+            {'FullName': _name, 'MobileNum': _phoneNo}).catchError((e) {
+          print(e);
+        });
+      } catch (e) {
+        print(e);
+      }
     }
+  }
+}
+
+
+bool isNumeric(String s) {
+  try
+  {
+    return double.parse(s) != null;
+  }
+  catch (e)
+  {
+    return false;
   }
 }
