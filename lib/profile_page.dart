@@ -3,10 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'authentication.dart';
 
 class ProfileWidget extends StatefulWidget {
-  ProfileWidget({this.userId, this.auth});
 
-  final BaseAuth auth;
   final String userId;
+
+  const ProfileWidget(this.userId);
 
   @override
   _ProfileWidgetState createState() => new _ProfileWidgetState();
@@ -21,7 +21,6 @@ enum AuthStatus {
 class _ProfileWidgetState extends State<ProfileWidget> {
   final _formKey = new GlobalKey<FormState>();
 
-  String _authID = 'LC4HKPs6fLQ7Bw9TkjygSyY4Hbv2';
   String _name;
   String _phoneNo;
   String _email;
@@ -41,7 +40,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
           new StreamBuilder(
               stream: Firestore.instance
                   .collection('UserData')
-                  .document(_authID)
+                  .document(widget.userId)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
@@ -164,12 +163,12 @@ class _ProfileWidgetState extends State<ProfileWidget> {
 
     if (_validateAndSave()) {
       print(_name);
-      print(_authID);
+      print(widget.userId);
 
       final database = Firestore.instance;
 
       try {
-        database.collection('UserData').document(_authID).updateData(
+        database.collection('UserData').document(widget.userId).updateData(
             {'FullName': _name, 'MobileNum': _phoneNo}).catchError((e) {
           print(e);
         });

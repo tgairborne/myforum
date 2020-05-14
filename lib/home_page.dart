@@ -51,13 +51,16 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  final List<Widget> _children = [
+  List<Widget> _children() => [
     PlaceholderWidget(Colors.grey),
     MessageWidget(),
-    ProfileWidget(userId: 'LC4HKPs6fLQ7Bw9TkjygSyY4Hbv2')
+    ProfileWidget(widget.userId)
   ];
 
   Widget build(BuildContext context) {
+
+    final List<Widget> children = _children( );
+    
     return new Scaffold(
       appBar: new AppBar(
         title: new Text('My Forum App'),
@@ -68,7 +71,7 @@ class _HomePageState extends State<HomePage> {
               onPressed: _signOut)
         ],
       ),
-      body: _children[_currentIndex],
+      body: children[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         onTap: onTabTapped,
         currentIndex: _currentIndex,
